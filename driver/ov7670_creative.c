@@ -31,14 +31,20 @@ static void cr_write(struct sd *sd, const struct cr_regmask *t, int n)
 }
 
 /*
- * Registers owned by the mode/window/frame-rate code. A live switch must
- * not touch them or the running stream breaks (e.g. QVGA window).
+ * Registers a live switch must not touch:
+ * - owned by the mode/window/frame-rate code (else the stream breaks)
+ * - the running AEC/AGC/AWB state: both init tables zero exposure and
+ *   gain, which turns the picture black until auto-exposure recovers
+ * - COM8 (0x13): the tables toggle AEC off and on; only the final value
+ *   is written, after the loop
  */
 static bool cr_live_skip(u8 reg)
 {
 	switch (reg) {
 	case 0x03: case 0x11: case 0x12: case 0x17:
 	case 0x18: case 0x19: case 0x1a: case 0x32:
+	case 0x00: case 0x01: case 0x02: case 0x04:
+	case 0x07: case 0x10: case 0x6a: case 0x13:
 		return true;
 	}
 	return false;
@@ -102,18 +108,26 @@ static void cr_apply_extras(struct sd *sd)
 static void cr_switch_tuning(struct sd *sd, bool on)
 {
 	struct gspca_dev *gspca_dev = &sd->gspca_dev;
-	int i;
+	int i, com8 = -1;
 
 	if (on) {
-		for (i = 0; i < ARRAY_SIZE(cr_init); i++)
-			if (!cr_live_skip(cr_init[i].reg))
+		for (i = 0; i < ARRAY_SIZE(cr_init); i++) {
+			if (cr_init[i].reg == OV7670_R13_COM8)
+				com8 = cr_init[i].val;
+			else if (!cr_live_skip(cr_init[i].reg))
 				i2c_w_mask(sd, cr_init[i].reg, cr_init[i].val,
 					   cr_init[i].mask);
+		}
 	} else {
-		for (i = 0; i < ARRAY_SIZE(norm_7670); i++)
-			if (!cr_live_skip(norm_7670[i].reg))
+		for (i = 0; i < ARRAY_SIZE(norm_7670); i++) {
+			if (norm_7670[i].reg == OV7670_R13_COM8)
+				com8 = norm_7670[i].val;
+			else if (!cr_live_skip(norm_7670[i].reg))
 				i2c_w(sd, norm_7670[i].reg, norm_7670[i].val);
+		}
 	}
+	if (com8 >= 0)
+		i2c_w(sd, OV7670_R13_COM8, com8);
 	/* same as mode_init_ov_sensor_regs() does at stream start */
 	i2c_w_mask(sd, 0x13, 0x00, 0x20);
 	i2c_w_mask(sd, OV7670_R13_COM8, OV7670_COM8_AWB, OV7670_COM8_AWB);

@@ -101,6 +101,9 @@ QPushButton#iconBtn {{ min-height: 32px; max-height: 32px; min-width: 32px; max-
 #seg QPushButton:checked {{ background: {T['surface3']}; color: {T['text']}; }}
 #seg QPushButton:focus {{ border: 1px solid {T['accent']}; }}
 #seg[big="true"] QPushButton {{ min-height: 32px; padding: 0 16px; }}
+#seg QPushButton:disabled {{ color: {T['faint']}; }}
+#seg QPushButton:checked:disabled {{ background: {T['surface3']}; color: {T['faint']}; }}
+QLabel:disabled {{ color: {T['faint']}; }}
 #seg QPushButton#accentChoice:checked {{ background: {T['accent']}; color: {T['accent_ink']}; font-weight: 600; }}
 
 QLineEdit {{ background: {T['surface2']}; border: 1px solid {T['line']}; border-radius: 8px;

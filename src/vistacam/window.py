@@ -167,6 +167,8 @@ class MainWindow(QMainWindow):
         self.ab_btn.setObjectName("primary")
         self.ab_btn.clicked.connect(self.compare)
         bar.addWidget(self.ab_btn)
+        for b in (self.hold, self.snap_btn, self.ab_btn, self.theme_btn):
+            b.setFocusPolicy(Qt.FocusPolicy.TabFocus)
         left.addLayout(bar)
 
         bento = QHBoxLayout()
@@ -330,8 +332,9 @@ class MainWindow(QMainWindow):
         def seg(sec, cid, title, names):
             if has(cid):
                 items = [(val, names.get(l, l)) for val, l in self.ctls[cid].menu]
-                sec.add(label(title))
+                lab = sec.add(label(title))
                 row = sec.add(Segmented(items))
+                row.title = lab
                 row.changed.connect(lambda val, cid=cid: self.set_ctl(cid, val, now=True))
                 self.rows[cid] = row
 
@@ -466,6 +469,8 @@ class MainWindow(QMainWindow):
                 row.set_active(on)
             else:
                 row.setEnabled(on)
+                if getattr(row, "title", None):
+                    row.title.setEnabled(on)
         has_t = tuning is not None
         for w in (self.tuning, self.hold, self.ab_btn):
             w.setVisible(has_t)
@@ -479,11 +484,16 @@ class MainWindow(QMainWindow):
         self.viewer.update()
 
     def on_size(self, idx):
-        self.size = "640x480" if idx == 0 else "320x240"
+        size = "640x480" if idx == 0 else "320x240"
+        if size == self.size:
+            return
+        self.size = size
         self.settings.setValue("size", self.size)
         self.restart_stream()
 
     def on_fps(self, fps):
+        if fps == self.fps:
+            return
         self.fps = fps
         self.settings.setValue("fps", fps)
         self.restart_stream()

@@ -22,9 +22,9 @@ class Toggle(QAbstractButton):
         super().__init__(parent)
         self.setCheckable(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
         self._pos = 0.0
-        self._anim = QPropertyAnimation(self, b"pos", self)
+        self._anim = QPropertyAnimation(self, b"knob", self)
         self._anim.setDuration(160)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.toggled.connect(self._animate)
@@ -44,14 +44,15 @@ class Toggle(QAbstractButton):
         self._pos = 1.0 if on else 0.0
         self.update()
 
-    def getPos(self):
+    def _get_knob(self):
         return self._pos
 
-    def setPos(self, v):
+    def _set_knob(self, v):
         self._pos = v
         self.update()
 
-    pos = Property(float, getPos, setPos)
+    # not "pos": that would shadow QWidget.pos and animate the widget's position
+    knob = Property(float, _get_knob, _set_knob)
 
     def paintEvent(self, _):
         p = QPainter(self)
@@ -89,6 +90,7 @@ class Segmented(QFrame):
             b = QPushButton(text)
             b.setCheckable(True)
             b.setCursor(Qt.CursorShape.PointingHandCursor)
+            b.setFocusPolicy(Qt.FocusPolicy.TabFocus)
             if value == accent_value:
                 b.setObjectName("accentChoice")
             self.group.addButton(b, value)
@@ -110,7 +112,7 @@ class FlatSlider(QSlider):
     def __init__(self, parent=None):
         super().__init__(Qt.Orientation.Horizontal, parent)
         self.setFixedHeight(22)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
 
     def _x(self, value):
         span = self.maximum() - self.minimum() or 1
