@@ -623,6 +623,13 @@ class MainWindow(QMainWindow):
 
 def main(argv=None):
     import sys
+    from PySide6.QtCore import QLoggingCategory
+    # PySide6 ships its own Qt; plugin paths meant for another Qt install
+    # (e.g. a system-wide QT_PLUGIN_PATH) load mismatched plugins and crash.
+    for var in ("QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGIN_PATH"):
+        os.environ.pop(var, None)
+    # the OV519 pads some frames; Qt decodes them fine but warns each time
+    QLoggingCategory.setFilterRules("qt.gui.imageio.jpeg=false")
     app = QApplication(sys.argv if argv is None else argv)
     app.setApplicationName("VistaCam")
     app.setApplicationVersion(__version__)
