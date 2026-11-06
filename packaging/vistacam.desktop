@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=VistaCam
+GenericName=Webcam tuning
+Comment=Live view, tuning and A/B comparison for the Creative Live! Cam Vista IM
+Exec=vistacam
+Icon=vistacam
+Terminal=false
+Categories=AudioVideo;Video;Utility;
+Keywords=webcam;camera;creative;vista;ov519;
+StartupWMClass=vistacam

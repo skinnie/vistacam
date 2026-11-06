@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+# kernel build output
+driver/*.o
+driver/*.ko
+driver/*.mod
+driver/*.mod.c
+driver/.*.cmd
+driver/Module.symvers
+driver/modules.order
+driver/.tmp_versions/
+driver/.module-common.o
+# Creative's files are not redistributed
+*.inf
+*.exe
+*.sys

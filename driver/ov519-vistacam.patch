@@ -1,0 +1,94 @@
+--- a/drivers/media/usb/gspca/ov519.c
++++ b/drivers/media/usb/gspca/ov519.c
+@@ -41,6 +41,7 @@
+ 
+ /* global parameters */
+ static int frame_rate;
++static bool creative_tuning = true;
+ 
+ /* Number of times to retry a failed I2C transaction. Increase this if you
+  * are getting "Failed to read sensor ID..." */
+@@ -102,6 +103,12 @@
+ 	s16 sensor_reg_cache[256];
+ 
+ 	u8 jpeg_hdr[JPEG_HDR_SZ];
++
++	/* Creative VF0260 (OV7670) extras, see ov7670_creative.c */
++	bool cr_tuning_applied;
++	struct v4l2_ctrl *cr_contrast, *cr_tuning, *cr_sat, *cr_sharp_auto,
++		*cr_sharp, *cr_gamma, *cr_wb, *cr_exp_auto, *cr_exp, *cr_gain,
++		*cr_bl, *cr_reg, *cr_val;
+ };
+ enum sensors {
+ 	SEN_OV2610,
+@@ -3258,6 +3265,8 @@
+ }
+ 
+ /* this function is called at probe and resume time */
++static void cr_init_sensor(struct sd *sd);
++
+ static int sd_init(struct gspca_dev *gspca_dev)
+ {
+ 	struct sd *sd = (struct sd *) gspca_dev;
+@@ -3423,7 +3432,16 @@
+ 		ov51x_led_control(sd, 0);
+ 		break;
+ 	case SEN_OV7670:
+-		write_i2c_regvals(sd, norm_7670, ARRAY_SIZE(norm_7670));
++		/* probe: module param; resume: keep the live choice */
++		sd->cr_tuning_applied = sd->cr_tuning ? sd->cr_tuning->val
++						      : creative_tuning;
++		if (sd->cr_tuning_applied) {
++			cr_init_sensor(sd);
++			if (!sd->cr_tuning)
++				sd->frame_rate = 30;	/* Creative default */
++		} else {
++			write_i2c_regvals(sd, norm_7670, ARRAY_SIZE(norm_7670));
++		}
+ 		break;
+ 	case SEN_OV8610:
+ 		write_i2c_regvals(sd, norm_8610, ARRAY_SIZE(norm_8610));
+@@ -4785,6 +4803,9 @@
+ 		w9968cf_set_crop_window(sd);
+ }
+ 
++#include "creative_tables.h"
++#include "ov7670_creative.c"
++
+ static int sd_get_jcomp(struct gspca_dev *gspca_dev,
+ 			struct v4l2_jpegcompression *jcomp)
+ {
+@@ -4884,7 +4905,7 @@
+ 	struct v4l2_ctrl_handler *hdl = &gspca_dev->ctrl_handler;
+ 
+ 	gspca_dev->vdev.ctrl_handler = hdl;
+-	v4l2_ctrl_handler_init(hdl, 10);
++	v4l2_ctrl_handler_init(hdl, 24);
+ 	if (valid_controls[sd->sensor].has_brightness)
+ 		sd->brightness = v4l2_ctrl_new_std(hdl, &sd_ctrl_ops,
+ 			V4L2_CID_BRIGHTNESS, 0,
+@@ -4936,6 +4957,9 @@
+ 			V4L2_CID_JPEG_COMPRESSION_QUALITY,
+ 			QUALITY_MIN, QUALITY_MAX, 1, QUALITY_DEF);
+ 
++	if (sd->sensor == SEN_OV7670)
++		cr_init_controls(sd, hdl);
++
+ 	if (hdl->error) {
+ 		gspca_err(gspca_dev, "Could not initialize controls\n");
+ 		return hdl->error;
+@@ -4963,6 +4987,8 @@
+ 	.dq_callback = sd_reset_snapshot,
+ 	.get_jcomp = sd_get_jcomp,
+ 	.set_jcomp = sd_set_jcomp,
++	.get_streamparm = cr_get_streamparm,
++	.set_streamparm = cr_set_streamparm,
+ #if IS_ENABLED(CONFIG_INPUT)
+ 	.other_input = 1,
+ #endif
+@@ -5028,3 +5054,5 @@
+ 
+ module_param(frame_rate, int, 0644);
+ MODULE_PARM_DESC(frame_rate, "Frame rate (5, 10, 15, 20 or 30 fps)");
++module_param(creative_tuning, bool, 0644);
++MODULE_PARM_DESC(creative_tuning, "Creative VF0260 (OV7670): start with Creative sensor tuning and 30 fps (default on)");
