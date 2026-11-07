@@ -4,6 +4,8 @@
 #   ./install.sh              driver + app
 #   ./install.sh --driver     driver only (asks for sudo)
 #   ./install.sh --app        app only (no sudo, installs for this user)
+#   ./install.sh --system-qt  app only, using the distro's PyQt6 instead of
+#                             downloading Qt (old CPUs, 32-bit, ARM)
 #   ./install.sh --uninstall  remove both
 set -euo pipefail
 
@@ -56,6 +58,7 @@ install_driver() {
 }
 
 install_app() {
+    local system_qt="${1:-}"
     command -v python3 >/dev/null || fail "python3 is missing"
     python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' || fail "Python 3.10 or newer is needed"
     python3 -c 'import venv, ensurepip' 2>/dev/null ||
@@ -63,9 +66,21 @@ install_app() {
     say "Installing the app into $APPDIR"
     rm -rf "$APPDIR/venv"
     mkdir -p "$APPDIR" "$BINDIR"
-    python3 -m venv "$APPDIR/venv"
-    "$APPDIR/venv/bin/pip" install --quiet --upgrade pip
-    "$APPDIR/venv/bin/pip" install --quiet "$HERE"
+    if [ -n "$system_qt" ]; then
+        python3 -c 'import PyQt6.QtWidgets, PyQt6.QtSvg, numpy' 2>/dev/null ||
+            fail "PyQt6 or numpy is missing. On Debian/Ubuntu/Mint: sudo apt install python3-pyqt6 python3-pyqt6.qtsvg python3-numpy"
+        python3 -m venv --system-site-packages "$APPDIR/venv"
+        "$APPDIR/venv/bin/pip" install --quiet --no-deps "$HERE"
+    else
+        python3 -m venv "$APPDIR/venv"
+        "$APPDIR/venv/bin/pip" install --quiet --upgrade pip
+        # Qt 6.10+ from PyPI needs SSE4.2 and POPCNT; older x86 CPUs get 6.9.
+        if [ "$(uname -m)" = x86_64 ] && ! grep -qw sse4_2 /proc/cpuinfo; then
+            say "This CPU has no SSE4.2; using PySide6 6.9"
+            "$APPDIR/venv/bin/pip" install --quiet "PySide6-Essentials>=6.5,<6.10"
+        fi
+        "$APPDIR/venv/bin/pip" install --quiet "$HERE"
+    fi
     ln -sf "$APPDIR/venv/bin/vistacam" "$BINDIR/vistacam"
     install -Dm644 "$HERE/packaging/vistacam.desktop" "$DATA/applications/vistacam.desktop"
     sed -i "s|^Exec=.*|Exec=$BINDIR/vistacam|" "$DATA/applications/vistacam.desktop"
@@ -94,6 +109,7 @@ case "${1:-all}" in
     all)          install_driver; install_app ;;
     --driver)     install_driver ;;
     --app)        install_app ;;
+    --system-qt)  install_app system-qt ;;
     --uninstall)  uninstall ;;
-    *)            sed -n '2,8p' "$0"; exit 1 ;;
+    *)            sed -n '2,9p' "$0"; exit 1 ;;
 esac

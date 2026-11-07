@@ -4,12 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vistacam"
-version = "0.1.0"
+version = "0.1.1"
 description = "Desktop app and Linux driver tuning for the Creative Live! Cam Vista IM (VF0260)"
 readme = "README.md"
 license = "GPL-2.0-or-later"
 requires-python = ">=3.10"
-dependencies = ["PySide6-Essentials>=6.5", "numpy>=1.23"]
+# PySide6 by default; the app also runs on PyQt6 (see src/vistacam/qt.py).
+dependencies = ["PySide6-Essentials>=6.5", "numpy>=1.21"]
 
 [project.gui-scripts]
 vistacam = "vistacam.window:main"

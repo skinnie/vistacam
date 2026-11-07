@@ -9,9 +9,11 @@ import tempfile
 os.environ["XDG_CONFIG_HOME"] = tempfile.mkdtemp()
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from PySide6.QtCore import QPoint, Qt  # noqa: E402
-from PySide6.QtTest import QTest  # noqa: E402
-from PySide6.QtWidgets import QApplication, QPushButton  # noqa: E402
+from vistacam.qt import QPoint, Qt  # noqa: E402
+from vistacam.qt import module  # noqa: E402
+
+QTest = module("QtTest").QTest
+from vistacam.qt import QApplication, QPushButton  # noqa: E402
 
 from vistacam import v4l2, window, widgets  # noqa: E402
 from vistacam.v4l2 import Control  # noqa: E402
@@ -43,8 +45,8 @@ FAKE = [
 
 
 class FakeCam(window.Camera.__base__):
-    from PySide6.QtCore import Signal
-    from PySide6.QtGui import QImage
+    from vistacam.qt import Signal
+    from vistacam.qt import QImage
     image = Signal(QImage, bytes)
     lost = Signal(str)
     status = Signal(str)

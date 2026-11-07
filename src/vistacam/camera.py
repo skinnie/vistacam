@@ -3,8 +3,8 @@ import threading
 import time
 
 import numpy as np
-from PySide6.QtCore import QObject, QThread, Signal
-from PySide6.QtGui import QImage
+from .qt import QObject, QThread, Signal
+from .qt import QImage, image_bytes
 
 from . import v4l2
 
@@ -123,7 +123,7 @@ def to_array(img: QImage, w=None, h=None):
     img = img.convertToFormat(QImage.Format.Format_RGB888)
     bpl = img.bytesPerLine()
     # copy: the buffer belongs to the temporary QImage
-    a = np.frombuffer(img.constBits(), dtype=np.uint8, count=bpl * img.height()).copy()
+    a = np.frombuffer(image_bytes(img), dtype=np.uint8, count=bpl * img.height()).copy()
     return a.reshape(img.height(), bpl)[:, : img.width() * 3].reshape(img.height(), img.width(), 3)
 
 

@@ -76,12 +76,50 @@ jobs:
           QT_QPA_PLATFORM=offscreen timeout 10 vistacam
           rc=$?
           [ "$rc" = 124 ] || { echo "::error::vistacam exited with $rc"; exit 1; }
+      - name: Start the app on an emulated Core 2 CPU (no SSE4.2, issue #1)
+        run: |
+          apt-get install -y -q --no-install-recommends qemu-user
+          set +e
+          QT_QPA_PLATFORM=offscreen timeout 120 qemu-x86_64 -cpu Penryn /usr/bin/python3 -s -c \
+            'import sys; sys.path.insert(0, "/opt/vistacam/lib"); from vistacam.window import main; sys.exit(main())'
+          rc=$?
+          [ "$rc" = 124 ] || { echo "::error::vistacam on Penryn exited with $rc"; exit 1; }
       - name: Remove packages
         run: apt-get remove -y -q vistacam gspca-ov519-vistacam-dkms
 
+  # The app from source on the distro's own PyQt6 (./install.sh --system-qt).
+  system-qt:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:12", "ubuntu:24.04", "linuxmintd/mint22.2-amd64"]
+    container: ${{ matrix.image }}
+    name: system Qt (${{ matrix.image }})
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PyQt6 from the distro
+        run: |
+          apt-get update -q
+          apt-get install -y -q --no-install-recommends python3-pyqt6 python3-pyqt6.qtsvg \
+            python3-numpy python3-venv python3-pip libqt6svg6 qt6-qpa-plugins
+      - name: UI test on PyQt6
+        run: QT_QPA_PLATFORM=offscreen VISTACAM_QT=pyqt6 python3 tests/ui_sweep.py
+      - name: install.sh --system-qt
+        run: |
+          useradd -m tester
+          cp -r . /home/tester/vistacam && chown -R tester /home/tester/vistacam
+          su tester -c 'cd ~/vistacam && ./install.sh --system-qt'
+          set +e
+          su tester -c 'QT_QPA_PLATFORM=offscreen timeout 10 ~/.local/bin/vistacam'
+          rc=$?
+          [ "$rc" = 124 ] || { echo "::error::vistacam exited with $rc"; exit 1; }
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build, test]
+    needs: [build, test, system-qt]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

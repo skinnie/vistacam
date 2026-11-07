@@ -13,7 +13,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VER="${1:-$(sed -n 's/^version = "\(.*\)"/\1/p' "$ROOT/pyproject.toml")}"
 VER="${VER#v}"
-PYSIDE_VER=6.12.0
+# 6.9 is the last PySide6 whose Qt runs on CPUs without SSE4.2/POPCNT (Core 2,
+# Athlon 64, Phenom); 6.10+ abort on them. See issue #1.
+PYSIDE_VER=6.9.3
 OUT="$ROOT/dist"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -98,7 +100,7 @@ A="$WORK/app"
 LIB="$A/opt/vistacam/lib"
 mkdir -p "$LIB" "$A/DEBIAN" "$A/usr/bin" "$A/usr/share/doc/vistacam"
 python3 -m pip install --quiet --disable-pip-version-check --no-compile --no-deps \
-    --only-binary=:all: --platform manylinux_2_34_x86_64 --python-version 3.10 \
+    --only-binary=:all: --platform manylinux_2_28_x86_64 --python-version 3.10 \
     --implementation cp --target "$LIB" \
     "PySide6-Essentials==$PYSIDE_VER" "shiboken6==$PYSIDE_VER"
 python3 -m pip install --quiet --disable-pip-version-check --no-compile --no-deps \
@@ -128,7 +130,7 @@ Section: video
 Priority: optional
 Maintainer: $MAINT
 Homepage: $HOME_URL
-Depends: python3 (>= 3.10), python3-numpy, libc6 (>= 2.34), libstdc++6, libgcc-s1, zlib1g, libzstd1,
+Depends: python3 (>= 3.10), python3-numpy, libc6 (>= 2.28), libstdc++6, libgcc-s1, zlib1g, libzstd1,
  libglib2.0-0t64 | libglib2.0-0, libdbus-1-3, libfontconfig1, libfreetype6, libgl1, libegl1,
  libxkbcommon0, libxkbcommon-x11-0, libx11-6, libx11-xcb1, libxcb1, libxcb-cursor0, libxcb-glx0,
  libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-randr0, libxcb-render0, libxcb-render-util0,

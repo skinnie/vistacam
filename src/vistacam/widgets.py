@@ -1,8 +1,8 @@
 """Custom widgets: toggle, segmented control, slider rows, meters, viewer."""
-from PySide6.QtCore import (Property, QEasingCurve, QPointF, QPropertyAnimation, QRectF,
+from .qt import (Property, QEasingCurve, QPointF, QPropertyAnimation, QRectF,
                             QSize, Qt, Signal)
-from PySide6.QtGui import QColor, QImage, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import (QAbstractButton, QButtonGroup, QFrame, QHBoxLayout, QLabel,
+from .qt import QColor, QImage, QPainter, QPainterPath, QPen
+from .qt import (QAbstractButton, QButtonGroup, QFrame, QHBoxLayout, QLabel,
                                QPushButton, QSizePolicy, QSlider, QVBoxLayout, QWidget)
 
 from .style import T, c, ui_font

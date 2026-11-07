@@ -5,9 +5,9 @@ the camera's colour.
 """
 import os
 
-from PySide6.QtCore import QByteArray, Qt
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPixmap
-from PySide6.QtSvg import QSvgRenderer
+from .qt import QByteArray, Qt
+from .qt import QColor, QFont, QFontDatabase, QIcon, QPainter, QPixmap
+from .qt import QSvgRenderer
 
 DARK = dict(
     bg="#0c0c0d", surface="#141415", surface2="#1c1c1e", surface3="#29292c",
