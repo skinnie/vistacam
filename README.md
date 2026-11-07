@@ -137,7 +137,7 @@ auto-exposure to settle. Compare A/B waits for that itself.
 driver/            patched gspca_ov519, DKMS config, register-table generator
 src/vistacam/      the Qt app (v4l2.py: camera access, window.py: UI)
 packaging/         desktop entry, icon
-packaging/deb/      .deb builder (also run by GitHub Actions)
+packaging/deb/     .deb builder (also run by GitHub Actions)
 tools/             off-screen screenshot renderer for the docs
 install.sh         driver + app installer
 ```
