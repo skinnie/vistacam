@@ -1,0 +1,96 @@
+# Build the .deb packages, test them on Ubuntu, Debian and Linux Mint, and
+# attach them to a GitHub release when a v* tag is pushed.
+name: Packages
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            v="${GITHUB_REF_NAME#v}"
+            grep -q "^version = \"$v\"" pyproject.toml ||
+              { echo "::error::tag $GITHUB_REF_NAME does not match pyproject.toml"; exit 1; }
+          else
+            v="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)+git$(git rev-parse --short HEAD)"
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - run: packaging/deb/build.sh "${{ steps.ver.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debs
+          path: dist/*.deb
+
+  test:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: "ubuntu:22.04", headers: linux-headers-generic }
+          - { image: "ubuntu:24.04", headers: linux-headers-generic }
+          - { image: "debian:12", headers: linux-headers-amd64 }
+          - { image: "linuxmintd/mint21.3-amd64", headers: linux-headers-generic }
+          - { image: "linuxmintd/mint22.2-amd64", headers: linux-headers-generic }
+          - { image: "linuxmintd/lmde6-amd64", headers: linux-headers-amd64 }
+    container: ${{ matrix.image }}
+    name: test (${{ matrix.image }})
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: debs
+      - name: Install packages
+        run: |
+          apt-get update -q
+          apt-get install -y -q --no-install-recommends ${{ matrix.headers }}
+          apt-get install -y -q --no-install-recommends ./*.deb
+      - name: Build the driver for the distro kernel
+        run: |
+          kver=$(ls /lib/modules | sort -V | tail -1)
+          ver="${{ needs.build.outputs.version }}"
+          echo "kernel $kver"
+          dkms build -m gspca-ov519-vistacam -v "$ver" -k "$kver"
+          ko=$(find /var/lib/dkms/gspca-ov519-vistacam/"$ver"/"$kver" -name 'gspca_ov519.ko*' | head -1)
+          modinfo "$ko" | grep -E '^(vermagic|parm)'
+          modinfo "$ko" | grep -q 'creative_tuning'
+      - name: Start the app (off-screen, no camera)
+        run: |
+          set +e
+          QT_QPA_PLATFORM=offscreen timeout 10 vistacam
+          rc=$?
+          [ "$rc" = 124 ] || { echo "::error::vistacam exited with $rc"; exit 1; }
+      - name: Remove packages
+        run: apt-get remove -y -q vistacam gspca-ov519-vistacam-dkms
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, test]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: debs
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" *.deb --repo "$GITHUB_REPOSITORY" \
+            --title "VistaCam $GITHUB_REF_NAME" --generate-notes

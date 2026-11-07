@@ -40,11 +40,34 @@ the two live.
 
 ## Install
 
-Needs a Linux system with `dkms`, the headers for your running kernel, and Python 3.10+
-with `venv`. On Debian or Ubuntu:
+### Ubuntu, Linux Mint, Debian (.deb)
+
+Download both `.deb` files from the [latest release](https://github.com/skinnie/vistacam/releases/latest)
+and install them together:
 
 ```sh
-sudo apt install dkms linux-headers-$(uname -r) python3-venv
+sudo apt install ./gspca-ov519-vistacam-dkms_*_all.deb ./vistacam_*_amd64.deb
+```
+
+Then start **VistaCam** from the menu. Replug the camera if it was in use during the install.
+
+- `gspca-ov519-vistacam-dkms` is the driver. DKMS compiles it for your kernel and rebuilds
+  it after every kernel update. It needs your kernel's headers, which Mint and Ubuntu
+  install by default (otherwise: `sudo apt install linux-headers-$(uname -r)`).
+- `vistacam` is the app. It brings its own copy of Qt, so nothing else needs installing.
+- Tested in CI on Ubuntu 22.04 and 24.04, Linux Mint 21.3 and 22.2, LMDE 6 and Debian 12
+  (x86_64).
+- With Secure Boot on, DKMS asks you to set a password the first time and enroll its
+  signing key at the next boot (the blue "MOK management" screen). Otherwise the kernel
+  refuses to load the driver.
+- Remove with `sudo apt remove vistacam gspca-ov519-vistacam-dkms`. The stock driver
+  comes back.
+
+### Other distributions (install script)
+
+Needs `dkms`, the headers for your running kernel, and Python 3.10+ with `venv`:
+
+```sh
 git clone https://github.com/skinnie/vistacam.git
 cd vistacam
 ./install.sh
@@ -53,6 +76,12 @@ cd vistacam
 `install.sh` builds the driver with DKMS (it asks for sudo and rebuilds itself on kernel
 updates), then installs the app for your user in `~/.local/share/vistacam` with a menu
 entry. Options: `--driver`, `--app`, `--uninstall`.
+
+### Build the .deb files yourself
+
+```sh
+packaging/deb/build.sh        # writes dist/*.deb
+```
 
 The app also works with the stock driver. It then shows the basic controls and tells you
 the patched driver is missing.
@@ -107,7 +136,8 @@ auto-exposure to settle. Compare A/B waits for that itself.
 ```
 driver/            patched gspca_ov519, DKMS config, register-table generator
 src/vistacam/      the Qt app (v4l2.py: camera access, window.py: UI)
-packaging/         desktop entry and icon
+packaging/         desktop entry, icon
+packaging/deb/      .deb builder (also run by GitHub Actions)
 tools/             off-screen screenshot renderer for the docs
 install.sh         driver + app installer
 ```
