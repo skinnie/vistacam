@@ -91,4 +91,4 @@
  module_param(frame_rate, int, 0644);
  MODULE_PARM_DESC(frame_rate, "Frame rate (5, 10, 15, 20 or 30 fps)");
 +module_param(creative_tuning, bool, 0644);
-+MODULE_PARM_DESC(creative_tuning, "Creative VF0260 (OV7670): start with Creative sensor tuning and 30 fps (default on)");
++MODULE_PARM_DESC(creative_tuning, "OV7670 cameras (Creative VF0260/VF0420): start with Creative sensor tuning and 30 fps (default on)");
