@@ -126,7 +126,8 @@ class MainWindow(QMainWindow):
         title = label("Vista IM", "title")
         title.setFont(style.ui_font(13, style.QFont.Weight.DemiBold))
         head.addWidget(title)
-        head.addWidget(label("Creative Live! Cam VF0260", "subtitle"))
+        self.model_label = label("Creative Live! Cam Vista IM", "subtitle")
+        head.addWidget(self.model_label)
         head.addSpacing(6)
         self.dev_chip = label("No camera", "chip")
         head.addWidget(self.dev_chip)
@@ -225,7 +226,8 @@ class MainWindow(QMainWindow):
         path = v4l2.find_device()
         loaded, patched = v4l2.driver_info()
         if not path:
-            self.viewer.empty = "Plug in the Creative Live! Cam Vista IM (USB 041e:4052)"
+            self.viewer.empty = ("Plug in the Creative Live! Cam Vista IM "
+                                 "(VF0260, USB 041e:4052, or VF0420, USB 041e:4064)")
             self.viewer.img = None
             self.viewer.update()
             self.dev_chip.setText("No camera")
@@ -237,10 +239,13 @@ class MainWindow(QMainWindow):
             self.viewer.empty = f"Can't open {path}: {e.strerror}"
             self.viewer.update()
             return
-        self.dev_chip.setText(f"{path}  ·  {v4l2.USB_ID}")
+        usb = v4l2.device_id(path) or "041e:4052"
+        self.model_label.setText(f"Creative Live! Cam {v4l2.CAMERAS.get(usb, 'Vista IM')}")
+        self.dev_chip.setText(f"{path}  ·  {usb}")
         if not patched:
             self.banner.setText("The patched driver isn't loaded, so Creative tuning and the extra "
-                                "controls are unavailable. Install it with: sudo ./install.sh")
+                                "controls are unavailable. Install the gspca-ov519-vistacam-dkms package "
+                                "or run ./install.sh --driver")
             self.banner.show()
         else:
             self.banner.hide()

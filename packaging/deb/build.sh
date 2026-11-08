@@ -43,10 +43,10 @@ Homepage: $HOME_URL
 Depends: dkms (>= 2.8)
 Recommends: linux-headers-generic | linux-headers-amd64 | linux-headers
 Installed-Size: $(du -sk "$D/usr" | cut -f1)
-Description: gspca_ov519 webcam driver with Creative's VF0260 tuning (DKMS)
+Description: gspca_ov519 webcam driver with Creative's Vista IM tuning (DKMS)
  Replaces the kernel's gspca_ov519 module with one that adds 30 fps and
  Creative's own OV7670 sensor settings for the Creative Live! Cam Vista IM
- (VF0260, 041e:4052), plus saturation, sharpness, gamma, white balance,
+ (VF0260, 041e:4052; VF0420, 041e:4064), plus saturation, sharpness, gamma, white balance,
  exposure, gain and backlight controls. Other OV519 cameras behave as before.
  .
  DKMS rebuilds the module for every new kernel.
@@ -139,6 +139,8 @@ Depends: python3 (>= 3.10), python3-numpy, libc6 (>= 2.28), libstdc++6, libgcc-s
 Recommends: gspca-ov519-vistacam-dkms (= $VER), libgtk-3-0t64 | libgtk-3-0
 Installed-Size: $(du -sk "$A/opt" "$A/usr" | awk '{s+=$1} END {print s}')
 Description: live view and tuning app for the Creative Live! Cam Vista IM
+ Supports the VF0260 (041e:4052) and VF0420 (041e:4064).
+ .
  Live view with histogram, colour-cast and clipping meters, every driver
  control, a hold-to-compare stock view and a side-by-side A/B comparison of
  Creative's tuning against the stock Linux driver. Works with the stock

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vistacam"
-version = "0.1.1"
+version = "0.1.2"
 description = "Desktop app and Linux driver tuning for the Creative Live! Cam Vista IM (VF0260)"
 readme = "README.md"
 license = "GPL-2.0-or-later"

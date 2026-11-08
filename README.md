@@ -1,7 +1,11 @@
 # VistaCam
 
-A desktop app and an improved Linux driver for the **Creative Live! Cam Vista IM (VF0260)**,
-USB ID `041e:4052`.
+A desktop app and an improved Linux driver for the **Creative Live! Cam Vista IM**:
+
+| Model | USB ID | Status |
+|---|---|---|
+| VF0260 | `041e:4052` | developed and tested on this camera |
+| VF0420 | `041e:4064` | same chips and same Creative tuning; should work, untested |
 
 Linux has supported this 2007 webcam for years through the `gspca_ov519` driver, but only
 with generic sensor settings: a washed-out picture, a cool cast, 15 fps, and five controls.
@@ -143,13 +147,19 @@ Changes to the upstream driver:
 | | Stock `gspca_ov519` | This driver |
 |---|---|---|
 | Frame rate at 640×480 | 15 fps, hard-coded | 30 fps default, selectable |
-| Sensor init | OmniVision reference values | Creative's VF0260 values |
+| Sensor init | OmniVision reference values | Creative's Vista IM values |
 | Controls | brightness, contrast, flips, mains flicker | plus saturation, sharpness, gamma, white balance, exposure, gain, backlight, tuning switch, register access |
 
 `driver/ov519-vistacam.patch` is the diff against Linux 7.0's `ov519.c`. The new code
 lives in `driver/ov7670_creative.c`, and only applies to the OV7670 sensor, so other OV519
 cameras behave as before. The sources build against Linux 7.0. Older or newer kernels may
 need small changes in `gspca.h`.
+
+The VF0420's Windows driver (`V0420Vid.inf`, May 2007) contains the same sensor setup and
+the same register table for every property as the VF0260's (`V0260Vid.inf`, July 2007).
+The two differ only in LED polarity, which the kernel driver already handles, and in a
+setup for the 352×288 and 176×144 modes that is close to OmniVision's reference values.
+If you own a VF0420, please report whether it works.
 
 ### What the tuning does
 

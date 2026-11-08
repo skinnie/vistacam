@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Creative Live! Cam Vista IM (VF0260, 041e:4052, OV519 + OV7670):
+ * Creative Live! Cam Vista IM (VF0260, 041e:4052, and VF0420, 041e:4064; OV519 + OV7670):
  * sensor tuning and extra controls taken from Creative's Windows driver.
  *
  * Included from ov519.c (like w996Xcf.c). All register values come from

@@ -23,10 +23,12 @@ camera_in_use() {
     local dev
     for v in /sys/class/video4linux/video*; do
         [ -e "$v/device/../idVendor" ] || continue
-        if [ "$(cat "$v/device/../idVendor"):$(cat "$v/device/../idProduct")" = "041e:4052" ]; then
-            dev="/dev/$(basename "$v")"
-            fuser "$dev" >/dev/null 2>&1 && return 0
-        fi
+        case "$(cat "$v/device/../idVendor"):$(cat "$v/device/../idProduct")" in
+            041e:4052|041e:4064) ;;   # Vista IM VF0260, VF0420
+            *) continue ;;
+        esac
+        dev="/dev/$(basename "$v")"
+        fuser "$dev" >/dev/null 2>&1 && return 0
     done
     return 1
 }

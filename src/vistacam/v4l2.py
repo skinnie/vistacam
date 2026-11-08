@@ -1,7 +1,7 @@
-"""Minimal V4L2 access for the Creative Live! Cam Vista IM (041e:4052).
+"""Minimal V4L2 access for the Creative Live! Cam Vista IM.
 
-Pure Python (ioctl + mmap), x86_64/aarch64 struct layouts. Only the camera
-with USB ID 041e:4052 is ever opened.
+Pure Python (ioctl + mmap), x86_64/aarch64 struct layouts. Only the USB IDs
+in CAMERAS are ever opened, never other webcams.
 """
 import errno
 import fcntl
@@ -12,7 +12,12 @@ import select
 import struct
 from dataclasses import dataclass, field
 
-USB_ID = "041e:4052"
+# Both are an OV519 bridge with an OV7670 sensor; Creative's Windows drivers
+# for them carry the same sensor tuning.
+CAMERAS = {
+    "041e:4052": "VF0260",
+    "041e:4064": "VF0420",
+}
 
 # ioctl numbers (64-bit layouts)
 VIDIOC_QUERYCAP = 0x80685600
@@ -76,19 +81,31 @@ class Control:
     menu: list = field(default_factory=list)  # [(value, label)]
 
 
+def _usb_id(sysdir):
+    usb = os.path.realpath(os.path.join(sysdir, "device", ".."))
+    try:
+        vid = open(os.path.join(usb, "idVendor")).read().strip()
+        pid = open(os.path.join(usb, "idProduct")).read().strip()
+    except OSError:
+        return None
+    return f"{vid}:{pid}"
+
+
 def find_device():
-    """Return /dev/videoN for the Vista IM, or None."""
+    """Return /dev/videoN for a Vista IM, or None."""
     for v in sorted(glob.glob("/sys/class/video4linux/video*")):
-        usb = os.path.realpath(os.path.join(v, "device", ".."))
         try:
-            vid = open(os.path.join(usb, "idVendor")).read().strip()
-            pid = open(os.path.join(usb, "idProduct")).read().strip()
             idx = open(os.path.join(v, "index")).read().strip()
         except OSError:
             continue
-        if f"{vid}:{pid}" == USB_ID and idx == "0":
+        if _usb_id(v) in CAMERAS and idx == "0":
             return "/dev/" + os.path.basename(v)
     return None
+
+
+def device_id(path):
+    """USB ID ("041e:4052") of an opened /dev/videoN, or None."""
+    return _usb_id(os.path.join("/sys/class/video4linux", os.path.basename(path)))
 
 
 def driver_info():
